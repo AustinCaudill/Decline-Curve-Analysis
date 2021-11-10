@@ -15,23 +15,24 @@ LOGO = ""
 
 
 
-navbar = dbc.Navbar(
-    dbc.Container(
-        [
-            html.A(
-                # Use row and col to control vertical alignment of logo / brand
-                dbc.Row(
-                    [
-                        dbc.Col(dbc.NavbarBrand("Decline Curve Generator", class_name="navbar-brand")),
-                    ],
-                    align="center",
-                ),
-                href="",
-                style={"textDecoration": "none"},
-            ),
-        ],
-        class_name="navbar navbar-expand-lg navbar-dark bg-primary",
-    ),
+navbar = dbc.NavbarSimple(
+    children=[
+        dbc.NavItem(dbc.NavLink("The Petro Guy", href="https://www.thepetroguy.com")),
+        dbc.DropdownMenu(
+            children=[
+                dbc.DropdownMenuItem("More pages", header=True),
+                dbc.DropdownMenuItem("UNAVAILABLE", href="#"),
+            ],
+            nav=True,
+            in_navbar=True,
+            label="Explore",
+        ),
+    ],
+    brand="Decline Curve Generator",
+    brand_href="#",
+    color="primary",
+    dark=True,
+    class_name="mb-4",
 )
 
 inputs = dbc.Card(
@@ -89,7 +90,6 @@ app.layout = dbc.Container(
         ),
     ],
     fluid=True,
-    class_name="dbc_dark",
 )
 
 @app.callback(
