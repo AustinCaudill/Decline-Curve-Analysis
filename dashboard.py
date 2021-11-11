@@ -164,9 +164,9 @@ def select_decline(decline_choice):
     elif decline_choice == 'HYP':
         b = 1
     elif decline_choice == 'HAR':
-        b = 2    
+        b = 1    
     else:
-        b = 0
+        b = "Nan"
     return b
 
 @app.callback(
@@ -175,14 +175,15 @@ def select_decline(decline_choice):
     Input('q_next', 'value'),
     Input('t_months', 'value'),
     Input('t_tot', 'value'),
-    Input('decline_choice', 'value'))
-def update_fig(q_init,q_next,t_months, t_tot, decline_choice):
+    Input('b', 'value'))
+def update_fig(q_init,q_next,t_months, t_tot, b):
     # Input Data
     t = np.arange(0.1,int(t_tot),0.5) # 120 months by 1/2 month
     t_0m = 0 # month
     q_init = int(q_init)
     q_next = int(q_next)
     t_months = int(t_months)
+    b=1
 
     D = np.log(q_init/q_next)/(t_months - t_0m) # Decline Rate
     q = q_init * np.exp(-D * t) # Forecast
