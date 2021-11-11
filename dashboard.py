@@ -16,7 +16,7 @@ load_figure_template("slate")
 
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.SLATE])
 app.title = 'Decline Curve Generator' 
-
+server = app.server
 
 LOGO = ""
 
