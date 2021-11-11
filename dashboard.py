@@ -249,4 +249,4 @@ def update_fig(q_init,q_next,t_months, t_tot, b_value):
     return fig
 
 if __name__ == "__main__":
-    app.run_server(debug=True)
+    app.run_server(debug=False)

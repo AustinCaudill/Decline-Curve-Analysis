@@ -1,5 +1,5 @@
-gunicorn
-dash
-numpy
-plotly-graph-objects
-dash-bootstrap-components
+dash==2.0.0
+dash_bootstrap_components==1.0.0
+dash_bootstrap_templates==0.1.1
+numpy==1.20.3
+plotly==5.3.1
