@@ -3,6 +3,7 @@ Austin Caudill
 11/11/2021
  """
 
+from inspect import EndOfBlock
 import dash
 from dash import dcc, html, dash_table
 from dash.dependencies import Input, Output, State
@@ -18,7 +19,6 @@ load_figure_template("slate")
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.SLATE])
 app.title = 'Decline Curve Generator' 
 server = app.server
-
 
 navbar = dbc.NavbarSimple(
     children=[
@@ -45,7 +45,7 @@ Exponential: b = 0
 
 Hyperbolic:  0< b <1
 
-Hyperbolic:  b = 1
+Harmonic:  b = 1
 
 
 [Equations](https://www.researchgate.net/figure/Summary-of-Arps-Equations-Poston-and-Poc-2008_fig1_316103542)
@@ -71,7 +71,7 @@ Body = html.Div(
                 id="b_value",
                 placeholder='B-Value',
                 type='number',
-                value='0',
+                value='1',
                 min="0",
                 max="1",
                 step="0.1"
@@ -101,7 +101,7 @@ inputs = dbc.CardGroup(
                     id="q_init",
                     placeholder='Initial Rate (STB/day)',
                     type='number',
-                    value='1000',
+                    value='1065',
                     min='1',
                     className="me-auto"
                     )
@@ -120,7 +120,7 @@ inputs = dbc.CardGroup(
                     id="q_next",
                     placeholder='Current Rate (STB/day)',
                     type='number',
-                    value='900',
+                    value='5',
                     min='0',
                     className="me-auto"
                     )
@@ -139,7 +139,7 @@ inputs = dbc.CardGroup(
                     id="t_months",
                     placeholder='Time (Months)',
                     type='number',
-                    value='1',
+                    value='26',
                     min='1',
                     className="me-auto"
                     )
@@ -158,7 +158,7 @@ inputs = dbc.CardGroup(
                     id="t_tot",
                     placeholder='Project Life',
                     type='number',
-                    value='120',
+                    value='50',
                     min='1',
                     className="me-auto"
                     )
@@ -168,7 +168,29 @@ inputs = dbc.CardGroup(
         ]
 )
 
-sidebar = dbc.Card([dbc.CardHeader("Choose b-value"), dbc.CardBody(Body, style={})])
+sample_data = html.Div(
+    [
+        dbc.RadioItems(
+            id="radios",
+            className="btn-group mb-4",
+            inputClassName="btn-check",
+            labelClassName="btn btn-outline-primary",
+            labelCheckedClassName="active",
+            options=[
+                {"label": "Clear Samples", "value": 1},
+                {"label": "BOZEMAN UNIT 802WA", "value": 2},
+                {"label": "LYNN UNIT 2H", "value": 3},
+            ],
+            value=2,
+        ),
+        html.Div(id="output"),
+    ],
+    className="radio-group",
+)
+
+sidebar = dbc.Card([dbc.CardHeader("Choose b-value"), dbc.CardBody(Body, style={})], className="")
+
+samples = dbc.Card([dbc.CardHeader("Sample Data"), dbc.CardBody(sample_data, style={})])
 
 notes = dbc.Card([dbc.CardHeader("Notes"), dbc.CardBody(notes_md, style={})], class_name="mb-4")
 
@@ -188,7 +210,7 @@ prod_table = html.Div([
         ),
         data=[
             dict(Model=i, **{param: 0 for param in params})
-            for i in range(1, 10)
+            for i in range(1, 1)
         ],
         style_header={
         'backgroundColor': '#515960',
@@ -215,7 +237,13 @@ app.layout = dbc.Container(
         navbar,
         dbc.Row(
             [
-                dbc.Col([sidebar], width=3),
+                dbc.Col(
+                    [
+                        dbc.Col([sidebar]),
+                        dbc.Col([samples])
+                    ],
+                    width=3,
+                ),
                 dbc.Col(
                     [
                         dbc.Row(inputs),
@@ -241,6 +269,28 @@ app.layout = dbc.Container(
     fluid=True,
 )
 
+@app.callback(Output("output", "children"), [Input("radios", "value")])
+def well_information(value):
+    if value == 2:
+        # table_header = [html.Thead(html.Tr([html.Th("Property"), html.Th("Value")]))]
+        row1 = html.Tr([html.Td("Well Name:"), html.Td("BOZEMAN UNIT 802WA")])
+        row2 = html.Tr([html.Td("API:"), html.Td("42-329-41603-0000")])
+        row3 = html.Tr([html.Td("Basin:"), html.Td("Permian")])
+        row4 = html.Tr([html.Td("Operator:"), html.Td("Diamondback E&P LLC")])
+        table_body = [html.Tbody([row1, row2, row3, row4])]
+        info_card = dbc.Table(table_body, bordered=True)
+    elif value == 3:
+        # table_header = [html.Thead(html.Tr([html.Th("Property"), html.Th("Value")]))]
+        row1 = html.Tr([html.Td("Well Name:"), html.Td("LYNN UNIT 2H")])
+        row2 = html.Tr([html.Td("API:"), html.Td("42-337-34517-0000")])
+        row3 = html.Tr([html.Td("Basin:"), html.Td("Fort Worth Syncline")])
+        row4 = html.Tr([html.Td("Operator:"), html.Td("EOG Resources, Inc")])
+        table_body = [html.Tbody([row1, row2, row3, row4])]
+        info_card = dbc.Table(table_body, bordered=True)
+    else:
+        info_card = "No sample data selected."
+    return info_card
+
 @app.callback(
     Output('prod_table', 'data'),
     Input('editing-rows-button', 'n_clicks'),
@@ -259,8 +309,9 @@ def add_row(n_clicks, rows, columns):
     Input('t_tot', 'value'),
     Input('b_value', 'value'),
     Input('prod_table', 'data'),
-    Input('prod_table', 'columns'))
-def update_fig(q_init,q_next,t_months, t_tot, b_value, rows, columns):
+    Input('prod_table', 'columns'),
+    Input("radios", "value"))
+def update_fig(q_init,q_next,t_months, t_tot, b_value, rows, columns, radios):
     # Input Data
     t_tot = int(t_tot)
     t = np.arange(0.1,t_tot,0.5) # 120 months by 1/2 month
@@ -277,7 +328,7 @@ def update_fig(q_init,q_next,t_months, t_tot, b_value, rows, columns):
             decline_choice = "Exponential"
             q = q_init*np.exp(-t*D)
             Np = (((q_init**b_value) / ((1 - b_value) * D)) * ((q_init ** (1 - b_value)) - (q ** (1 - b_value))))
-        elif 0< value <1:
+        elif 0< value < 1:
             decline_choice = "Hyperbolic"
             q = q_init*np.power((1+b_value*D*t),(-(1/b_value)))
             Np = (((q_init**b_value) / ((1 - b_value) * D)) * ((q_init ** (1 - b_value)) - (q ** (1 - b_value))))
@@ -297,6 +348,35 @@ def update_fig(q_init,q_next,t_months, t_tot, b_value, rows, columns):
     fig.add_trace(go.Scatter(x=t, y=q, name='Rate (q)', line=dict(color='white', width=4)))
     fig.add_trace(go.Scatter(x=t, y=(Np), name='Cum Production (Np)', line=dict(color='white', width=4, dash='dash')), secondary_y=True)
 
+    # Plot user-selected sample data
+    if radios == 2:
+        sd2 = pd.read_csv("42-329-41603-0000.csv")
+        sd2['Oil'] = sd2['Oil'].astype(float)
+        sd2['Oil'] = sd2['Oil'].div(30.437)
+        # sd2['Water'] = sd2['Water'].astype(float)
+        # sd2['Water'] = sd2['Water'].div(30.437)
+        sd2['Gas'] = sd2['Gas'].astype(float)
+        sd2['Gas'] = sd2['Gas'].div(30.437)
+        fig.add_trace(go.Scatter(x=sd2.index, y=sd2['Oil'], name='Oil Production', line=dict(color='green', width=1)))
+        # fig.add_trace(go.Scatter(x=sd2.index, y=sd2['Water'], name='Water Production', line=dict(color='blue', width=1)))
+        fig.add_trace(go.Scatter(x=sd2.index, y=sd2['Gas'], name='Gas Production', line=dict(color='red', width=1)))
+    elif radios == 3:
+        sd3 = pd.read_csv("42-337-34517-0000.csv")
+        sd3.replace('-', '0', inplace=True)
+        sd3['Oil'] = sd3['Oil'].astype(float)
+        sd3['Oil'] = sd3['Oil'].div(30.437)
+        sd3['Water'] = sd3['Water'].astype(float)
+        sd3['Water'] = sd3['Water'].div(30.437)
+        sd3['Gas'] = sd3['Gas'].astype(float)
+        sd3['Gas'] = sd3['Gas'].div(30.437)
+        fig.add_trace(go.Scatter(x=sd3.index, y=sd3['Oil'], name='Oil Production', line=dict(color='green', width=1)))
+        fig.add_trace(go.Scatter(x=sd3.index, y=sd3['Water'], name='Water Production', line=dict(color='blue', width=1)))
+        fig.add_trace(go.Scatter(x=sd3.index, y=sd3['Gas'], name='Gas Production', line=dict(color='red', width=1)))
+    else:
+        pass
+    
+
+
     # Plot User Inputted Production Values
     df = pd.DataFrame(rows, columns=[c['name'] for c in columns])
     df['Oil'] = df['Oil'].astype(float)
@@ -313,7 +393,7 @@ def update_fig(q_init,q_next,t_months, t_tot, b_value, rows, columns):
     fig.update_xaxes(title_text="Cumulative Time (Months)")
 
     # Set y-axes titles
-    fig.update_yaxes(title_text="Rate (STB/Day)", secondary_y=False)
+    fig.update_yaxes(title_text="Rate (STB/Day or MCF/Day)", secondary_y=False)
     fig.update_yaxes(title_text="Cum Production (MMSTB)", secondary_y=True)
 
     fig.update_layout(
