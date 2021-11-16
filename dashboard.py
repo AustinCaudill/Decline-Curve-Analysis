@@ -2,7 +2,7 @@
 Austin Caudill
 11/11/2021
  """
-
+import time
 from inspect import EndOfBlock
 import dash
 from dash import dcc, html, dash_table
@@ -195,7 +195,17 @@ samples = dbc.Card([dbc.CardHeader("Sample Data"), dbc.CardBody(sample_data, sty
 notes = dbc.Card([dbc.CardHeader("Notes"), dbc.CardBody(notes_md, style={})], class_name="mb-4")
 
 graph_card = dbc.Card(
-    dbc.CardBody([dcc.Graph(id="fig", style={"height": 400})]), className="my-4"
+    dbc.CardBody(
+        [
+            dcc.Loading(
+            id="loading-1",
+            type="default",
+            children=html.Div(id="loading-output-1")
+        ),
+            dcc.Graph(id="fig", style={"height": 400})
+        ]
+        ), 
+        className="my-4"
 )
 
 params = [
@@ -268,6 +278,11 @@ app.layout = dbc.Container(
     ],
     fluid=True,
 )
+
+@app.callback(Output("loading-output-1", "children"), Input("radios", "value"))
+def input_triggers_spinner(value):
+    time.sleep(2)
+    return
 
 @app.callback(Output("output", "children"), [Input("radios", "value")])
 def well_information(value):
