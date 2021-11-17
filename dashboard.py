@@ -1,6 +1,7 @@
 """ 
 Austin Caudill
 11/17/2021
+V2
  """
 import time
 from inspect import EndOfBlock
@@ -32,7 +33,7 @@ navbar = dbc.NavbarSimple(
             in_navbar=True,
             label="Explore",
         )],
-    brand="Decline Curve Generator",
+    brand="Decline Curve Generator V2.0",
     brand_href="#",
     color="primary",
     dark=True,
