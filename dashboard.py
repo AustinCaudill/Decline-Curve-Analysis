@@ -1,6 +1,6 @@
 """ 
 Austin Caudill
-11/11/2021
+11/17/2021
  """
 import time
 from inspect import EndOfBlock
@@ -25,8 +25,8 @@ navbar = dbc.NavbarSimple(
         dbc.NavItem(dbc.NavLink("The Petro Guy", href="https://www.thepetroguy.com", target="_new")),
         dbc.DropdownMenu(
             children=[
-                dbc.DropdownMenuItem("More pages", header=True),
-                dbc.DropdownMenuItem("UNAVAILABLE", href="#"),
+                dbc.DropdownMenuItem("GitHub Repo", href="https://github.com/AustinCaudill/Petroleum-Engineering-Basics"),
+                dbc.DropdownMenuItem("Donate", href="https://www.paypal.com/donate/?business=FL4XB8U8KC4UU&no_recurring=0&item_name=Thank+you+for+supporting+my+work.&currency_code=USD"),
             ],
             nav=True,
             in_navbar=True,
@@ -84,7 +84,14 @@ Body = html.Div(
 
 
 footer = html.Div(
-        dbc.Row(dbc.Card(("© 2021 Austin Caudill"), className="text-center p-2"))
+    [
+        dbc.Button(
+            "Found this app useful - Donate!", href="https://www.paypal.com/donate/?business=FL4XB8U8KC4UU&no_recurring=0&item_name=Thank+you+for+supporting+my+work.&currency_code=USD", target='_blank', id="example-button", outline=True, color="success", className="me-1"
+        ),
+        html.Span(id="example-output", style={"verticalAlign": "middle"}),
+        dbc.Row(dbc.Card(("© 2021 Austin Caudill"), className="text-center p-2")),
+    ],
+    className="d-grid",
 )
 
 inputs = dbc.CardGroup(
@@ -170,16 +177,14 @@ inputs = dbc.CardGroup(
 
 sample_data = html.Div(
     [
-        dbc.RadioItems(
+        dcc.Dropdown(
             id="radios",
-            className="btn-group mb-4",
-            inputClassName="btn-check",
-            labelClassName="btn btn-outline-primary",
-            labelCheckedClassName="active",
+            className="mb-4",
             options=[
-                {"label": "Clear Samples", "value": 1},
+                {"label": "Clear Sample Data", "value": 1},
                 {"label": "BOZEMAN UNIT 802WA", "value": 2},
                 {"label": "LYNN UNIT 2H", "value": 3},
+                {"label": "GOLDSMITH-LANDRETH/SAN ANDRES/UT 211R", "value": 4},
             ],
             value=2,
         ),
@@ -192,7 +197,14 @@ sidebar = dbc.Card([dbc.CardHeader("Choose b-value"), dbc.CardBody(Body, style={
 
 samples = dbc.Card([dbc.CardHeader("Sample Data"), dbc.CardBody(sample_data, style={})])
 
-notes = dbc.Card([dbc.CardHeader("Notes"), dbc.CardBody(notes_md, style={})], class_name="mb-4")
+notes = dbc.Card(
+    [
+        dbc.CardHeader("Notes"), 
+        dbc.Badge("Warning", color="warning", className="me-1"),
+        dbc.CardBody(notes_md, style={})
+    ], 
+    class_name="mb-4"
+)
 
 graph_card = dbc.Card(
     dbc.CardBody(
@@ -302,6 +314,14 @@ def well_information(value):
         row4 = html.Tr([html.Td("Operator:"), html.Td("EOG Resources, Inc")])
         table_body = [html.Tbody([row1, row2, row3, row4])]
         info_card = dbc.Table(table_body, bordered=True)
+    elif value == 4:
+        # table_header = [html.Thead(html.Tr([html.Th("Property"), html.Th("Value")]))]
+        row1 = html.Tr([html.Td("Well Name:"), html.Td("GOLDSMITH-LANDRETH/SAN ANDRES/UT 211R")])
+        row2 = html.Tr([html.Td("API:"), html.Td("42-135-41592-0000")])
+        row3 = html.Tr([html.Td("Basin:"), html.Td("Permian")])
+        row4 = html.Tr([html.Td("Operator:"), html.Td("KINDER MORGAN PRODUCTION CO LLC")])
+        table_body = [html.Tbody([row1, row2, row3, row4])]
+        info_card = dbc.Table(table_body, bordered=True)
     else:
         info_card = "No sample data selected."
     return info_card
@@ -387,6 +407,18 @@ def update_fig(q_init,q_next,t_months, t_tot, b_value, rows, columns, radios):
         fig.add_trace(go.Scatter(x=sd3.index, y=sd3['Oil'], name='Oil Production', line=dict(color='green', width=1)))
         fig.add_trace(go.Scatter(x=sd3.index, y=sd3['Water'], name='Water Production', line=dict(color='blue', width=1)))
         fig.add_trace(go.Scatter(x=sd3.index, y=sd3['Gas'], name='Gas Production', line=dict(color='red', width=1)))
+    elif radios == 4:
+        sd4 = pd.read_csv("42-135-41592-0000.csv")
+        sd4.replace('-', '0', inplace=True)
+        sd4['Oil'] = sd4['Oil'].astype(float)
+        sd4['Oil'] = sd4['Oil'].div(30.437)
+        sd4['Water'] = sd4['Water'].astype(float)
+        sd4['Water'] = sd4['Water'].div(30.437)
+        sd4['Gas'] = sd4['Gas'].astype(float)
+        sd4['Gas'] = sd4['Gas'].div(30.437)
+        fig.add_trace(go.Scatter(x=sd4.index, y=sd4['Oil'], name='Oil Production', line=dict(color='green', width=1)))
+        fig.add_trace(go.Scatter(x=sd4.index, y=sd4['Water'], name='Water Production', line=dict(color='blue', width=1)))
+        fig.add_trace(go.Scatter(x=sd4.index, y=sd4['Gas'], name='Gas Production', line=dict(color='red', width=1)))
     else:
         pass
     
@@ -425,4 +457,4 @@ def update_fig(q_init,q_next,t_months, t_tot, b_value, rows, columns, radios):
 
 
 if __name__ == "__main__":
-    app.run_server(debug=True)
+    app.run_server(debug=False)
