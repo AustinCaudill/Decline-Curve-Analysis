@@ -176,6 +176,28 @@ inputs = dbc.CardGroup(
         ]
 )
 
+
+autocurve_sel = html.Div(
+    [
+        dbc.RadioItems(
+            id="ac_sel",
+            className="btn-group",
+            inputClassName="btn-check",
+            labelClassName="btn btn-outline-primary",
+            labelCheckedClassName="active",
+            options=[
+                {"label": "Oil", "value": 1},
+                {"label": "Water", "value": 2},
+                {"label": "Gas", "value": 3},
+                {"label": "None", "value": 4},
+            ],
+            value=1,
+        ),
+        html.Div(id="ac_output"),
+    ],
+    className="radio-group",
+)
+
 sample_data = html.Div(
     [
         dcc.Dropdown(
@@ -270,6 +292,7 @@ app.layout = dbc.Container(
                 dbc.Col(
                     [
                         dbc.Row(inputs),
+                        dbc.Row(autocurve_sel),
                         graph_card,
                     ],
                     width=8,
@@ -384,7 +407,7 @@ def update_fig(q_init,q_next,t_months, t_tot, b_value, rows, columns, radios):
     # Plot Calculations
     fig = make_subplots(specs=[[{"secondary_y": True}]])
     fig.add_trace(go.Scatter(x=t, y=q, name='Rate (q)', line=dict(color='white', width=4)))
-    fig.add_trace(go.Scatter(x=t, y=(Np), name='Cum Production (Np)', line=dict(color='white', width=4, dash='dash')), secondary_y=True)
+    fig.add_trace(go.Scatter(x=t, y=Np, name='Cum Production (Np)', line=dict(color='white', width=4, dash='dash')), secondary_y=True)
 
     # Plot user-selected sample data
     if radios == 2:
