@@ -297,7 +297,9 @@ def input_triggers_spinner(value):
     time.sleep(2)
     return
 
-@app.callback(Output("output", "children"), [Input("radios", "value")])
+@app.callback(
+    Output("output", "children"), 
+    Input("radios", "value"))
 def well_information(value):
     if value == 2:
         # table_header = [html.Thead(html.Tr([html.Th("Property"), html.Th("Value")]))]
@@ -458,4 +460,4 @@ def update_fig(q_init,q_next,t_months, t_tot, b_value, rows, columns, radios):
 
 
 if __name__ == "__main__":
-    app.run_server(debug=False)
+    app.run_server(debug=True)
