@@ -1,7 +1,7 @@
 """ 
 Austin Caudill
-11/17/2021
-V2
+11/28/21
+V2.5
  """
 import time
 from inspect import EndOfBlock
@@ -33,7 +33,7 @@ navbar = dbc.NavbarSimple(
             in_navbar=True,
             label="Explore",
         )],
-    brand="Decline Curve Generator V2.0",
+    brand="Decline Curve Generator V2.5",
     brand_href="#",
     color="primary",
     dark=True,
@@ -72,7 +72,7 @@ Body = html.Div(
                 id="b_value",
                 placeholder='B-Value',
                 type='number',
-                value='1',
+                value='0.9',
                 min="0",
                 max="1",
                 step="0.1"
@@ -109,8 +109,27 @@ inputs = dbc.CardGroup(
                     id="q_init",
                     placeholder='Initial Rate (STB/day)',
                     type='number',
-                    value='1065',
+                    value='274',
                     min='1',
+                    className="me-auto"
+                    )
+                ]
+            )
+        ),
+        dbc.Card(
+            dbc.CardBody(
+                [
+                    html.H5("Initial Time (t_0)", className="card-title"),
+                    html.P(
+                        "Input the initial time, t_0, in months.",
+                        className="card-text",
+                    ),
+                    dcc.Input(
+                    id="t_init",
+                    placeholder='Initial Time (Months)',
+                    type='number',
+                    value='7',
+                    min='0',
                     className="me-auto"
                     )
                 ]
@@ -128,7 +147,7 @@ inputs = dbc.CardGroup(
                     id="q_next",
                     placeholder='Current Rate (STB/day)',
                     type='number',
-                    value='5',
+                    value='40',
                     min='0',
                     className="me-auto"
                     )
@@ -147,7 +166,7 @@ inputs = dbc.CardGroup(
                     id="t_months",
                     placeholder='Time (Months)',
                     type='number',
-                    value='26',
+                    value='108',
                     min='1',
                     className="me-auto"
                     )
@@ -166,7 +185,7 @@ inputs = dbc.CardGroup(
                     id="t_tot",
                     placeholder='Project Life',
                     type='number',
-                    value='50',
+                    value='200',
                     min='1',
                     className="me-auto"
                     )
@@ -186,8 +205,11 @@ sample_data = html.Div(
                 {"label": "BOZEMAN UNIT 802WA", "value": 2},
                 {"label": "LYNN UNIT 2H", "value": 3},
                 {"label": "GOLDSMITH-LANDRETH/SAN ANDRES/UT 211R", "value": 4},
+                {"label": "SUGG-A- 1831HM", "value": 5},
+                {"label": "FALSETTE RANCH UNIT LAS A 2H", "value": 6},
+                {"label": "MCFADDEN 14-11H", "value": 7},
             ],
-            value=2,
+            value=5,
         ),
         html.Div(id="output"),
     ],
@@ -323,6 +345,30 @@ def well_information(value):
         row4 = html.Tr([html.Td("Operator:"), html.Td("KINDER MORGAN PRODUCTION CO LLC")])
         table_body = [html.Tbody([row1, row2, row3, row4])]
         info_card = dbc.Table(table_body, bordered=True)
+    elif value == 5:
+        # table_header = [html.Thead(html.Tr([html.Th("Property"), html.Th("Value")]))]
+        row1 = html.Tr([html.Td("Well Name:"), html.Td("SUGG-A- 1831HM")])
+        row2 = html.Tr([html.Td("API:"), html.Td("42-383-37763-0000")])
+        row3 = html.Tr([html.Td("Basin:"), html.Td("Permian")])
+        row4 = html.Tr([html.Td("Operator:"), html.Td("LAREDO PETROLEUM, INC.")])
+        table_body = [html.Tbody([row1, row2, row3, row4])]
+        info_card = dbc.Table(table_body, bordered=True)
+    elif value == 6:
+        # table_header = [html.Thead(html.Tr([html.Th("Property"), html.Th("Value")]))]
+        row1 = html.Tr([html.Td("Well Name:"), html.Td("FALSETTE RANCH UNIT LAS A 2H")])
+        row2 = html.Tr([html.Td("API:"), html.Td("42-283-34005-0000")])
+        row3 = html.Tr([html.Td("Basin:"), html.Td("Gulf Coast Basin (LA - TX)")])
+        row4 = html.Tr([html.Td("Operator:"), html.Td("CHESAPEAKE OPERATING, L.L.C.")])
+        table_body = [html.Tbody([row1, row2, row3, row4])]
+        info_card = dbc.Table(table_body, bordered=True)
+    elif value == 7:
+        # table_header = [html.Thead(html.Tr([html.Th("Property"), html.Th("Value")]))]
+        row1 = html.Tr([html.Td("Well Name:"), html.Td("MCFADDEN 14-11H")])
+        row2 = html.Tr([html.Td("API:"), html.Td("33-025-03304-0000")])
+        row3 = html.Tr([html.Td("Basin:"), html.Td("Williston Basin")])
+        row4 = html.Tr([html.Td("Operator:"), html.Td("MARATHON OIL COMPANY")])
+        table_body = [html.Tbody([row1, row2, row3, row4])]
+        info_card = dbc.Table(table_body, bordered=True)
     else:
         info_card = "No sample data selected."
     return info_card
@@ -343,32 +389,34 @@ def add_row(n_clicks, rows, columns):
     Input('q_next', 'value'),
     Input('t_months', 'value'),
     Input('t_tot', 'value'),
+    Input('t_init', 'value'),
     Input('b_value', 'value'),
     Input('prod_table', 'data'),
     Input('prod_table', 'columns'),
     Input("radios", "value"))
-def update_fig(q_init,q_next,t_months, t_tot, b_value, rows, columns, radios):
+def update_fig(q_init,q_next,t_months, t_tot, t_init, b_value, rows, columns, radios):
     # Input Data
     t_tot = int(t_tot)
-    t = np.arange(0.1,t_tot,0.5) # 120 months by 1/2 month
+    t_init = float(t_init)
+    t = np.arange(0.001,t_tot,0.5)
     t_0m = 0 # month
     q_init = int(q_init)
-    q_next = int(q_next)
+    q_next = int(q_next)/30.437
     t_months = int(t_months)
     b_value = float(b_value)
 
     D = np.log(q_init/q_next)/(t_months - t_0m) # Decline Rate
 
-    def determine_decline(value, q_init, t, D):
-        if value == 0:
+    def determine_decline(b_value, q_init, t, D):
+        if b_value == 0:
             decline_choice = "Exponential"
             q = q_init*np.exp(-t*D)
             Np = (((q_init**b_value) / ((1 - b_value) * D)) * ((q_init ** (1 - b_value)) - (q ** (1 - b_value))))
-        elif 0< value < 1:
+        elif 0< b_value < 1:
             decline_choice = "Hyperbolic"
             q = q_init*np.power((1+b_value*D*t),(-(1/b_value)))
             Np = (((q_init**b_value) / ((1 - b_value) * D)) * ((q_init ** (1 - b_value)) - (q ** (1 - b_value))))
-        elif value == 1:
+        elif b_value == 1:
             decline_choice = "Harmonic"
             q = q_init*np.power((1+b_value*D*t),(-1/b_value))
             Np = (q_init/D)*np.log(q_init/q)
@@ -381,8 +429,8 @@ def update_fig(q_init,q_next,t_months, t_tot, b_value, rows, columns, radios):
 
     # Plot Calculations
     fig = make_subplots(specs=[[{"secondary_y": True}]])
-    fig.add_trace(go.Scatter(x=t, y=q, name='Rate (q)', line=dict(color='white', width=4)))
-    fig.add_trace(go.Scatter(x=t, y=(Np), name='Cum Production (Np)', line=dict(color='white', width=4, dash='dash')), secondary_y=True)
+    fig.add_trace(go.Scatter(x=(t+t_init), y=q, name='Rate (q)', line=dict(color='white', width=4)))
+    fig.add_trace(go.Scatter(x=(t+t_init), y=Np, name='Cum Production (Np)', line=dict(color='white', width=4, dash='dash')), secondary_y=True)
 
     # Plot user-selected sample data
     if radios == 2:
@@ -420,6 +468,42 @@ def update_fig(q_init,q_next,t_months, t_tot, b_value, rows, columns, radios):
         fig.add_trace(go.Scatter(x=sd4.index, y=sd4['Oil'], name='Oil Production', line=dict(color='green', width=1)))
         fig.add_trace(go.Scatter(x=sd4.index, y=sd4['Water'], name='Water Production', line=dict(color='blue', width=1)))
         fig.add_trace(go.Scatter(x=sd4.index, y=sd4['Gas'], name='Gas Production', line=dict(color='red', width=1)))
+    elif radios == 5:
+        sd5 = pd.read_csv("42-383-37763-0000.csv")
+        sd5.replace('-', '0', inplace=True)
+        sd5['Oil'] = sd5['Oil'].astype(float)
+        sd5['Oil'] = sd5['Oil'].div(30.437)
+        sd5['Water'] = sd5['Water'].astype(float)
+        sd5['Water'] = sd5['Water'].div(30.437)
+        sd5['Gas'] = sd5['Gas'].astype(float)
+        sd5['Gas'] = sd5['Gas'].div(30.437)
+        fig.add_trace(go.Scatter(x=sd5.index, y=sd5['Oil'], name='Oil Production', line=dict(color='green', width=1)))
+        fig.add_trace(go.Scatter(x=sd5.index, y=sd5['Water'], name='Water Production', line=dict(color='blue', width=1)))
+        #fig.add_trace(go.Scatter(x=sd5.index, y=sd5['Gas'], name='Gas Production', line=dict(color='red', width=1)))
+    elif radios == 6:
+        sd6 = pd.read_csv("42-283-34005-0000.csv")
+        sd6.replace('-', '0', inplace=True)
+        sd6['Oil'] = sd6['Oil'].astype(float)
+        sd6['Oil'] = sd6['Oil'].div(30.437)
+        sd6['Water'] = sd6['Water'].astype(float)
+        sd6['Water'] = sd6['Water'].div(30.437)
+        sd6['Gas'] = sd6['Gas'].astype(float)
+        sd6['Gas'] = sd6['Gas'].div(30.437)
+        fig.add_trace(go.Scatter(x=sd6.index, y=sd6['Oil'], name='Oil Production', line=dict(color='green', width=1)))
+        fig.add_trace(go.Scatter(x=sd6.index, y=sd6['Water'], name='Water Production', line=dict(color='blue', width=1)))
+        fig.add_trace(go.Scatter(x=sd6.index, y=sd6['Gas'], name='Gas Production', line=dict(color='red', width=1)))
+    elif radios == 7:
+        sd7 = pd.read_csv("33-025-03304-0000.csv")
+        sd7.replace('-', '0', inplace=True)
+        sd7['Oil'] = sd7['Oil'].astype(float)
+        sd7['Oil'] = sd7['Oil'].div(30.437)
+        sd7['Water'] = sd7['Water'].astype(float)
+        sd7['Water'] = sd7['Water'].div(30.437)
+        sd7['Gas'] = sd7['Gas'].astype(float)
+        sd7['Gas'] = sd7['Gas'].div(30.437)
+        fig.add_trace(go.Scatter(x=sd7.index, y=sd7['Oil'], name='Oil Production', line=dict(color='green', width=1)))
+        fig.add_trace(go.Scatter(x=sd7.index, y=sd7['Water'], name='Water Production', line=dict(color='blue', width=1)))
+        fig.add_trace(go.Scatter(x=sd7.index, y=sd7['Gas'], name='Gas Production', line=dict(color='red', width=1)))
     else:
         pass
     
