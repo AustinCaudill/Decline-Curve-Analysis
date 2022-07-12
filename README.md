@@ -1,7 +1,3 @@
-# Petroleum Engineering Basics
- 
-A collection of simple python scripts and notebooks demonstrating basic Petroleum Engineering concepts.
-
 ## Decline Curves ##
 [Simple DCA Jupyter Notebook](https://github.com/AustinCaudill/Petroleum-Engineering-Basics/blob/main/Decline%20Curves.ipynb)
 
